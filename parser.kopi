@@ -32,14 +32,63 @@ def parse(tokens):
 def parse_statement(tokens, i):
     token = tokens[i]
 
-    if token == "let":
-        name = tokens[i + 1]
-        if tokens[i + 2] != "=":
-            raise SyntaxError("Expected '=' after variable name")
-        expr, i = parse_expression(tokens, i + 3)
+    if token == "assert":
+        expr, i = parse_expression(tokens, i + 1)
+        message = None
+        if i < len(tokens) and tokens[i] == ",":
+            message, i = parse_expression(tokens, i + 1)
         if i < len(tokens) and tokens[i] == ";":
             i += 1
-        return ("let", name, expr), i
+        return ("assert", expr, message), i
+
+    if token == "try":
+        body, i = parse_block(tokens, i + 1)
+        handlers = []
+        while i < len(tokens) and tokens[i] == "except":
+            exception_type = None
+            var_name = None
+            i += 1
+            if tokens[i] not in("{", ":"):
+                exception_type = tokens[i]
+                i += 1
+                if i < len(tokens) and tokens[i] == "as":
+                    var_name = tokens[i + 1]
+                    i += 2
+            handler_body, i = parse_block(tokens, i)
+            handlers.append((exception_type, var_name, handler_body))
+        return ("try", body, handlers), i
+
+    if token == "match":
+        expr, i = parse_expression(tokens, i + 1)
+        if tokens[i] != "{":
+            raise SyntaxError("Expected '{' after match expression")
+        i += 1
+        cases = []
+        while tokens[i] != "}":
+            if tokens[i] != "case":
+                raise SyntaxError("Expected 'case' in match block")
+            i += 1
+            pattern = tokens[i]
+            i += 1
+            if tokens[i] != ":":
+                raise SyntaxError("Expected ':' after case pattern")
+            i += 1
+            case_body, i = parse_block(tokens, i)
+            cases.append((pattern, case_body))
+        return ("match", expr, cases), i + 1
+
+    if token == "let":
+        names = [tokens[i + 1]]
+        i += 2
+        while i < len(tokens) and tokens[i] == ",":
+            names.append(tokens[i + 1])
+            i += 2
+        if tokens[i] != "=":
+            raise SyntaxError("Expected '=' after variable name")
+        expr, i = parse_expression(tokens, i + 1)
+        if i < len(tokens) and tokens[i] == ";":
+            i += 1
+        return ("let", names if len(names) > 1 else names[0], expr), i
 
     if token == "import":
         module_name = tokens[i + 1]
@@ -57,14 +106,19 @@ def parse_statement(tokens, i):
         if tokens[i + 2] != "(":
             raise SyntaxError("Expected '(' after function name")
         params = []
+        defaults = {}
         i = i + 3
         while tokens[i] != ")":
-            params.append(tokens[i])
+            param_name = tokens[i]
             i += 1
-            if tokens[i] == ",":
+            if i < len(tokens) and tokens[i] == "=":
+                default_val, i = parse_expression(tokens, i + 1)
+                defaults[param_name] = default_val
+            if i < len(tokens) and tokens[i] == ",":
                 i += 1
+            params.append(param_name)
         body, i = parse_block(tokens, i + 1)
-        return ("def", name, params, body), i
+        return ("def", name, params, body, defaults if defaults else {}), i
 
     if token == "if":
         if tokens[i + 1] != "(":
@@ -187,6 +241,13 @@ def parse_expression(tokens, i, min_prec=1):
         rhs, i = parse_expression(tokens, i + 1, prec + 1)
         lhs = ("binop", op, lhs, rhs)
 
+    if i < len(tokens) and tokens[i] == "if":
+        condition, i = parse_expression(tokens, i + 1)
+        if tokens[i] != "else":
+            raise SyntaxError("Expected 'else' in ternary expression")
+        else_val, i = parse_expression(tokens, i + 1)
+        lhs = ("ternary", lhs, condition, else_val)
+
     return lhs, i
 
 
@@ -203,15 +264,36 @@ def parse_primary(tokens, i):
 
     if token == "(":
         expr, i = parse_expression(tokens, i + 1)
-        if tokens[i] != ")":
-            raise SyntaxError("Expected ')' in expression")
-        return expr, i + 1
+        if tokens[i] == ")":
+            return expr, i + 1
+        if tokens[i] == ",":
+            items = [expr]
+            while tokens[i] == ",":
+                i += 1
+                if tokens[i] == ")":
+                    break
+                item, i = parse_expression(tokens, i)
+                items.append(item)
+            if tokens[i] != ")":
+                raise SyntaxError("Expected ')' in tuple")
+            return ("tuple", items), i + 1
+        raise SyntaxError("Expected ')' in expression")
 
     if token == "{":
         items = []
         i += 1
-        if tokens[i] != "}":
-            while True:
+        if tokens[i] == "}":
+            return ("set", []), i + 1
+        first_item, i = parse_expression(tokens, i)
+        if i < len(tokens) and tokens[i] == ":":
+            is_dict = True
+            i += 1
+            value, i = parse_expression(tokens, i)
+            items.append((first_item, value) if isinstance(first_item, str) else (str(first_item), value))
+            while i < len(tokens) and tokens[i] == ",":
+                i += 1
+                if tokens[i] == "}":
+                    break
                 key_token = tokens[i]
                 if key_token.startswith('"') and key_token.endswith('"'):
                     key = key_token[1:-1]
@@ -224,12 +306,17 @@ def parse_primary(tokens, i):
                     raise SyntaxError("Expected ':' after dict key")
                 value, i = parse_expression(tokens, i + 1)
                 items.append((key, value))
+            return ("dict", items), i + 1
+        else:
+            is_set = True
+            items = [first_item]
+            while i < len(tokens) and tokens[i] == ",":
+                i += 1
                 if tokens[i] == "}":
                     break
-                if tokens[i] != ",":
-                    raise SyntaxError("Expected ',' between dict entries")
-                i += 1
-        return ("dict", items), i + 1
+                item, i = parse_expression(tokens, i)
+                items.append(item)
+            return ("set", items), i + 1
 
     if token == "[":
         items = []
@@ -257,9 +344,6 @@ def parse_primary(tokens, i):
     if token == "false":
         return ("bool", False), i + 1
 
-    if token == "null" or token == "none":
-        return ("none", None), i + 1
-
     if token.isidentifier():
         expr = ("var", token)
         i += 1
@@ -280,11 +364,32 @@ def parse_primary(tokens, i):
                 expr = ("call", expr, args)
                 continue
             if tokens[i] == "[":
-                index_expr, i = parse_expression(tokens, i + 1)
-                if tokens[i] != "]":
-                    raise SyntaxError("Expected ']' after index")
                 i += 1
-                expr = ("index", expr, index_expr)
+                if tokens[i] == ":":
+                    start = None
+                else:
+                    start, i = parse_expression(tokens, i)
+                if i < len(tokens) and tokens[i] == ":":
+                    i += 1
+                    stop = None
+                    if tokens[i] != "]" and tokens[i] != ":":
+                        stop, i = parse_expression(tokens, i)
+                    if i < len(tokens) and tokens[i] == ":":
+                        i += 1
+                        step = None
+                        if tokens[i] != "]":
+                            step, i = parse_expression(tokens, i)
+                    else:
+                        step = None
+                    if tokens[i] != "]":
+                        raise SyntaxError("Expected ']' after slice")
+                    i += 1
+                    expr = ("slice", expr, start, stop, step)
+                else:
+                    if tokens[i] != "]":
+                        raise SyntaxError("Expected ']' after index")
+                    i += 1
+                    expr = ("index", expr, start)
                 continue
             if tokens[i] == ".":
                 if i + 1 >= len(tokens) or not tokens[i + 1].isidentifier():

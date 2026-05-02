@@ -65,8 +65,52 @@ def execute(statement, local_vars, global_vars, functions, module_cache, load_mo
     kind = statement[0]
 
     if kind == "let":
-        _, name, expr = statement
-        local_vars[name] = evaluate(expr, local_vars, global_vars, functions, module_cache, load_module)
+        _, names, expr = statement
+        value = evaluate(expr, local_vars, global_vars, functions, module_cache, load_module)
+        if isinstance(names, list):
+            if not isinstance(value, (list, tuple)):
+                raise RuntimeError("Cannot unpack non-sequence value")
+            for i, name in enumerate(names):
+                if i < len(value):
+                    local_vars[name] = value[i]
+        else:
+            local_vars[names] = value
+        return None
+
+    if kind == "assert":
+        _, expr, message = statement
+        result = evaluate(expr, local_vars, global_vars, functions, module_cache, load_module)
+        if not is_truthy(result):
+            msg = "Assertion failed"
+            if message:
+                msg += ": " + str(evaluate(message, local_vars, global_vars, functions, module_cache, load_module))
+            raise AssertionError(msg)
+        return None
+
+    if kind == "try":
+        _, body, handlers = statement
+        try:
+            execute_block(body, local_vars, global_vars, functions, module_cache, load_module)
+        except Exception as e:
+            handled = False
+            for exc_type, var_name, handler_body in handlers:
+                if exc_type is None or type(e).__name__ == exc_type or exc_type == "Exception":
+                    if var_name:
+                        local_vars[var_name] = str(e)
+                    execute_block(handler_body, local_vars, global_vars, functions, module_cache, load_module)
+                    handled = True
+                    break
+            if not handled:
+                raise
+        return None
+
+    if kind == "match":
+        _, expr, cases = statement
+        value = evaluate(expr, local_vars, global_vars, functions, module_cache, load_module)
+        for pattern, body in cases:
+            if pattern == "_" or str(value) == pattern or pattern == str(type(value).__name__):
+                execute_block(body, local_vars, global_vars, functions, module_cache, load_module)
+                return None
         return None
 
     if kind == "assign":
@@ -102,8 +146,9 @@ def execute(statement, local_vars, global_vars, functions, module_cache, load_mo
         return None
 
     if kind == "def":
-        _, name, params, body = statement
-        functions[name] = (params, body)
+        _, name, params, body = statement[:4]
+        defaults = statement[4] if len(statement) > 4 else {}
+        functions[name] = (params, body, defaults)
         return None
 
     if kind == "if":
@@ -196,7 +241,13 @@ def evaluate(node, local_vars, global_vars, functions, module_cache, load_module
 
     if kind == "none":
         return None
+tuple":
+        return tuple(evaluate(item, local_vars, global_vars, functions, module_cache, load_module) for item in node[1])
 
+    if kind == "set":
+        return set(evaluate(item, local_vars, global_vars, functions, module_cache, load_module) for item in node[1])
+
+    if kind == "
     if kind == "array":
         return [evaluate(item, local_vars, global_vars, functions, module_cache, load_module) for item in node[1]]
 
@@ -230,11 +281,7 @@ def evaluate(node, local_vars, global_vars, functions, module_cache, load_module
         op = node[1]
         left = evaluate(node[2], local_vars, global_vars, functions, module_cache, load_module)
         right = evaluate(node[3], local_vars, global_vars, functions, module_cache, load_module)
-
-        if op == "+":
-            if isinstance(left, str) or isinstance(right, str):
-                return str(left) + str(right)
-            if isinstance(left, list) and isinstance(right, list):
+if isinstance(left, tuple) and isinstance(right, tuple):
                 return left + right
             return left + right
         if op == "-":
@@ -243,6 +290,10 @@ def evaluate(node, local_vars, global_vars, functions, module_cache, load_module
             if isinstance(left, list) and isinstance(right, int):
                 return left * right
             if isinstance(right, list) and isinstance(left, int):
+                return right * left
+            if isinstance(left, tuple) and isinstance(right, int):
+                return left * right
+            if isinstance(right, tuple) and isinstance(left, int):
                 return right * left
             return left * right
         if op == "%":
@@ -266,6 +317,26 @@ def evaluate(node, local_vars, global_vars, functions, module_cache, load_module
         if op == "and" or op == "&&":
             return is_truthy(left) and is_truthy(right)
         if op == "or" or op == "||":
+
+    if kind == "slice":
+        source = evaluate(node[1], local_vars, global_vars, functions, module_cache, load_module)
+        start = evaluate(node[2], local_vars, global_vars, functions, module_cache, load_module) if node[2] else None
+        stop = evaluate(node[3], local_vars, global_vars, functions, module_cache, load_module) if node[3] else None
+        step = evaluate(node[4], local_vars, global_vars, functions, module_cache, load_module) if node[4] else None
+        return source[start:stop:step]
+            return is_truthy(left) or is_truthy(right)
+
+    if kind == "ternary":
+        _, value, condition, else_val = node
+        if is_truthy(evaluate(condition, local_vars, global_vars, functions, module_cache, load_module)):
+            return evaluate(value, local_vars, global_vars, functions, module_cache, load_module)
+        else:
+            return evaluate(else_val, local_vars, global_vars, functions, module_cache, load_module
+        if op == ">=":
+            return left >= right
+        if op == "and" or op == "&&":
+            return is_truthy(left) and is_truthy(right)
+        if op == "or" or op == "||":
             return is_truthy(left) or is_truthy(right)
 
     if kind == "index":
@@ -280,8 +351,16 @@ def evaluate(node, local_vars, global_vars, functions, module_cache, load_module
         if fn[0] == "var":
             name = fn[1]
             if name in functions:
-                params, body = functions[name]
+                func_info = functions[name]
+                if len(func_info) == 3:
+                    params, body, defaults = func_info
+                else:
+                    params, body = func_info
+                    defaults = {}
                 call_vars = {param: arg for param, arg in zip(params, args)}
+                for param in params[len(args):]:
+                    if param in defaults:
+                        call_vars[param] = evaluate(defaults[param], local_vars, global_vars, functions, module_cache, load_module)
                 try:
                     execute_block(body, call_vars, global_vars, functions, module_cache, load_module)
                 except ReturnValue as return_value:
@@ -298,10 +377,6 @@ def evaluate(node, local_vars, global_vars, functions, module_cache, load_module
                     return return_value.value
                 return None
             raise RuntimeError("Only simple function names are supported")
-
-        if name == "print":
-            print(*args)
-            return None
 
         if name == "print":
             print(*args)
@@ -463,6 +538,102 @@ def evaluate(node, local_vars, global_vars, functions, module_cache, load_module
             if len(args) not in (1, 2):
                 raise RuntimeError("round() takes one or two arguments")
             return round(args[0]) if len(args) == 1 else round(args[0], args[1])
+
+        # String methods
+        if name == "strip":
+            if len(args) not in (1, 2):
+                raise RuntimeError("strip() takes one or two arguments")
+            if len(args) == 1:
+                return str(args[0]).strip()
+            return str(args[0]).strip(str(args[1]))
+
+        if name == "find":
+            if len(args) not in (2, 3, 4):
+                raise RuntimeError("find() takes two to four arguments")
+            text = str(args[0])
+            substring = str(args[1])
+            if len(args) == 2:
+                return text.find(substring)
+            if len(args) == 3:
+                return text.find(substring, args[2])
+            return text.find(substring, args[2], args[3])
+
+        if name == "count":
+            if len(args) not in (2, 3, 4):
+                raise RuntimeError("count() takes two to four arguments")
+            text = str(args[0])
+            substring = str(args[1])
+            if len(args) == 2:
+                return text.count(substring)
+            if len(args) == 3:
+                return text.count(substring, args[2])
+            return text.count(substring, args[2], args[3])
+
+        if name == "index":
+            if len(args) not in (2, 3, 4):
+                raise RuntimeError("index() takes two to four arguments")
+            text = str(args[0])
+            substring = str(args[1])
+            if len(args) == 2:
+                return text.index(substring)
+            if len(args) == 3:
+                return text.index(substring, args[2])
+            return text.index(substring, args[2], args[3])
+
+        if name == "reverse":
+            if len(args) != 1:
+                raise RuntimeError("reverse() takes exactly one argument")
+            value = args[0]
+            if isinstance(value, list):
+                return list(reversed(value))
+            return str(args[0])[::-1]
+
+        # File I/O
+        if name == "open":
+            if len(args) not in (1, 2):
+                raise RuntimeError("open() takes one or two arguments")
+            path = str(args[0])
+            mode = "r" if len(args) == 1 else str(args[1])
+            try:
+                return ("kopi_file", open(path, mode))
+            except Exception as e:
+                raise RuntimeError(f"Failed to open file: {e}")
+
+        if name == "read":
+            if len(args) not in (0, 1):
+                raise RuntimeError("read() takes zero or one arguments")
+            if len(args) == 1:
+                if isinstance(args[0], tuple) and args[0][0] == "kopi_file":
+                    try:
+                        return args[0][1].read()
+                    except Exception as e:
+                        raise RuntimeError(f"Failed to read file: {e}")
+                else:
+                    prompt = str(args[0])
+                    return input(prompt)
+            return input()
+
+        if name == "write":
+            if len(args) != 2:
+                raise RuntimeError("write() takes exactly two arguments")
+            if isinstance(args[0], tuple) and args[0][0] == "kopi_file":
+                try:
+                    args[0][1].write(str(args[1]))
+                    return None
+                except Exception as e:
+                    raise RuntimeError(f"Failed to write file: {e}")
+            raise RuntimeError("First argument to write() must be a file object")
+
+        if name == "close":
+            if len(args) != 1:
+                raise RuntimeError("close() takes exactly one argument")
+            if isinstance(args[0], tuple) and args[0][0] == "kopi_file":
+                try:
+                    args[0][1].close()
+                    return None
+                except Exception as e:
+                    raise RuntimeError(f"Failed to close file: {e}")
+            raise RuntimeError("Argument to close() must be a file object")
 
         if name not in functions:
             raise NameError(f"Undefined function '{name}'")

@@ -65,6 +65,7 @@ def tokenize(source):
         start = i
         while i < len(source) and not source[i].isspace() and source[i] not in '()+-*/%=;{},<>![]:."#':
             i += 1
-        tokens.append(source[start:i])
+        word = source[start:i]
+        tokens.append(word)
 
     return tokens
