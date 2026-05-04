@@ -238,7 +238,7 @@ To reinstall it after uninstalling:
 ./scripts/package-extension.sh
 code --install-extension kopi-language-support-1.0.0.vsix --force
 ```
-
+Alternatively
 You can also keep the extension recommendation in your workspace so collaborators see it automatically:
 
 - `.vscode/settings.json` maps `.kopi` files to the Kopi language
