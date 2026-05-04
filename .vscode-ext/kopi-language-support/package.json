@@ -24,8 +24,8 @@
         ],
         "configuration": "language-configuration.json",
         "icon": {
-          "light": "icons/kopi.svg",
-          "dark": "icons/kopi.svg"
+          "light": "icons/kopi.png",
+          "dark": "icons/kopi.png"
         }
       }
     ],
