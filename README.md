@@ -223,7 +223,20 @@ To package and install the extension locally:
 
 ```bash
 ./scripts/package-extension.sh
-code --install-extension kopi-language-support-1.0.0.vsix
+code --install-extension kopi-language-support-1.0.0.vsix --force
+```
+
+To uninstall the Kopi extension from VS Code:
+
+```bash
+code --uninstall-extension kopi-org.kopi-language-support
+```
+
+To reinstall it after uninstalling:
+
+```bash
+./scripts/package-extension.sh
+code --install-extension kopi-language-support-1.0.0.vsix --force
 ```
 
 You can also keep the extension recommendation in your workspace so collaborators see it automatically:

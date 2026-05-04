@@ -1,0 +1,1 @@
+Hello, Kopi!\nThis is a test file.\nWritten with file I/O built-ins.\n

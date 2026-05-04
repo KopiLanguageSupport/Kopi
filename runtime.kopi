@@ -113,6 +113,17 @@ def execute(statement, local_vars, global_vars, functions, module_cache, load_mo
                 return None
         return None
 
+    if kind == "assign_tuple":
+        _, names, expr = statement
+        value = evaluate(expr, local_vars, global_vars, functions, module_cache, load_module)
+        if not isinstance(value, (list, tuple)):
+            raise RuntimeError("Tuple unpacking requires a list or tuple")
+        if len(names) != len(value):
+            raise RuntimeError("Tuple unpacking assignment length mismatch")
+        for name, item in zip(names, value):
+            local_vars[name] = item
+        return None
+
     if kind == "assign":
         _, name, op, expr = statement
         value = evaluate(expr, local_vars, global_vars, functions, module_cache, load_module)
@@ -241,13 +252,13 @@ def evaluate(node, local_vars, global_vars, functions, module_cache, load_module
 
     if kind == "none":
         return None
-tuple":
+
+    if kind == "tuple":
         return tuple(evaluate(item, local_vars, global_vars, functions, module_cache, load_module) for item in node[1])
 
     if kind == "set":
         return set(evaluate(item, local_vars, global_vars, functions, module_cache, load_module) for item in node[1])
 
-    if kind == "
     if kind == "array":
         return [evaluate(item, local_vars, global_vars, functions, module_cache, load_module) for item in node[1]]
 
@@ -281,7 +292,8 @@ tuple":
         op = node[1]
         left = evaluate(node[2], local_vars, global_vars, functions, module_cache, load_module)
         right = evaluate(node[3], local_vars, global_vars, functions, module_cache, load_module)
-if isinstance(left, tuple) and isinstance(right, tuple):
+        if op == "+":
+            if isinstance(left, tuple) and isinstance(right, tuple):
                 return left + right
             return left + right
         if op == "-":
@@ -317,6 +329,7 @@ if isinstance(left, tuple) and isinstance(right, tuple):
         if op == "and" or op == "&&":
             return is_truthy(left) and is_truthy(right)
         if op == "or" or op == "||":
+            return is_truthy(left) or is_truthy(right)
 
     if kind == "slice":
         source = evaluate(node[1], local_vars, global_vars, functions, module_cache, load_module)
@@ -324,20 +337,14 @@ if isinstance(left, tuple) and isinstance(right, tuple):
         stop = evaluate(node[3], local_vars, global_vars, functions, module_cache, load_module) if node[3] else None
         step = evaluate(node[4], local_vars, global_vars, functions, module_cache, load_module) if node[4] else None
         return source[start:stop:step]
-            return is_truthy(left) or is_truthy(right)
 
     if kind == "ternary":
         _, value, condition, else_val = node
         if is_truthy(evaluate(condition, local_vars, global_vars, functions, module_cache, load_module)):
             return evaluate(value, local_vars, global_vars, functions, module_cache, load_module)
         else:
-            return evaluate(else_val, local_vars, global_vars, functions, module_cache, load_module
-        if op == ">=":
-            return left >= right
-        if op == "and" or op == "&&":
-            return is_truthy(left) and is_truthy(right)
-        if op == "or" or op == "||":
-            return is_truthy(left) or is_truthy(right)
+            return evaluate(else_val, local_vars, global_vars, functions, module_cache, load_module)
+
 
     if kind == "index":
         source = evaluate(node[1], local_vars, global_vars, functions, module_cache, load_module)
@@ -381,12 +388,6 @@ if isinstance(left, tuple) and isinstance(right, tuple):
         if name == "print":
             print(*args)
             return None
-
-        if name == "read":
-            if len(args) > 0:
-                prompt = str(args[0])
-                return input(prompt)
-            return input()
 
         if name == "len":
             if len(args) != 1:
