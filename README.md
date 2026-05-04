@@ -25,7 +25,7 @@ python3 main.kopi examples/basics.kopi
 
 ### Automatic PATH setup
 
-In the Kopi dev container (Codespaces), the `kopi` command is automatically available in your PATH. You can use:
+In the Kopi dev container (Codespaces), the `kopi` command is automatically available in your PATH. After rebuilding the container, you can use:
 
 ```bash
 kopi run examples/basics.kopi

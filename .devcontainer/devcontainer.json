@@ -1,10 +1,7 @@
 {
     "name": "Kopi Codespace",
     "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11",
-    "postCreateCommand": "echo 'Kopi environment ready!'",
-    "containerEnv": {
-        "PATH": "${containerWorkspaceFolder}:${PATH}"
-    },
+    "postCreateCommand": "chmod +x /workspaces/Kopi/kopi && ln -sf /workspaces/Kopi/kopi /usr/local/bin/kopi && echo 'Kopi command installed'",
     "customizations": {
         "vscode": {
             "settings": {
