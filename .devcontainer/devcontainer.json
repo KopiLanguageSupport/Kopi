@@ -5,7 +5,11 @@
     "containerEnv": {
         "PATH": "${containerWorkspaceFolder}:${PATH}"
     },
-    "settings": {
-        "terminal.integrated.shell.linux": "/bin/bash"
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash"
+            }
+        }
     }
 }
