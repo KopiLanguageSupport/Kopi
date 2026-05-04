@@ -14,7 +14,7 @@ Kopi is a tiny, simple programming language built for learning and experimenting
 Use the interpreter with a `.kopi` file:
 
 ```bash
-./kopi run examples/basics.kopi
+kopi run examples/basics.kopi
 ```
 
 Or use Python directly:
@@ -23,9 +23,18 @@ Or use Python directly:
 python3 main.kopi examples/basics.kopi
 ```
 
-### Making `kopi` available globally
+### Automatic PATH setup
 
-To use `kopi run` from anywhere, add the Kopi directory to your PATH:
+In the Kopi dev container (Codespaces), the `kopi` command is automatically available in your PATH. You can use:
+
+```bash
+kopi run examples/basics.kopi
+kopi update
+```
+
+### Making `kopi` available globally (outside dev container)
+
+To use `kopi` from anywhere outside the dev container, add the Kopi directory to your PATH:
 
 ```bash
 export PATH="$PATH:/path/to/Kopi"
@@ -35,17 +44,18 @@ Then you can run:
 
 ```bash
 kopi run path/to/file.kopi
+kopi update
 ```
 
-## OR
+### Updating the VS Code extension
 
-Kopi is also automatically availible so you dont have to install this. It comes with the repo.
-
-You can just start using
+To update the Kopi language support extension in VS Code:
 
 ```bash
-kopi run path/to/file.kopi
+kopi update
 ```
+
+This will automatically uninstall and reinstall the latest version of the extension.
 
 ## What you can write in Kopi
 

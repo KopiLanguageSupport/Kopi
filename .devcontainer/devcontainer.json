@@ -2,6 +2,9 @@
     "name": "Kopi Codespace",
     "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11",
     "postCreateCommand": "echo 'Kopi environment ready!'",
+    "containerEnv": {
+        "PATH": "${containerWorkspaceFolder}:${PATH}"
+    },
     "settings": {
         "terminal.integrated.shell.linux": "/bin/bash"
     }
