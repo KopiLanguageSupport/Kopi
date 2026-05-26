@@ -1,0 +1,16 @@
+{
+  "name": "Kopi Language",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "PandaBefriender.kopi-language-support"
+      ]
+    }
+  },
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/workspaces/Kopi"
+  },
+  "forwardPorts": [],
+  "postCreateCommand": "chmod +x /workspaces/Kopi/kopi /workspaces/Kopi/scripts/*.sh && echo 'Kopi environment ready! Use: kopi run <file.kopi> or kopi update'"
+}

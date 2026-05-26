@@ -1,0 +1,50 @@
+{
+  "name": "kopi-language-support",
+  "displayName": "Kopi Language Support",
+  "description": "Syntax highlighting and language support for the Kopi programming language",
+  "version": "1.4.1",
+  "publisher": "PandaBefriender",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "kopi",
+    "language",
+    "syntax",
+    "highlighting"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "kopi",
+        "aliases": [
+          "Kopi",
+          "kopi"
+        ],
+        "extensions": [
+          ".kopi"
+        ],
+        "icon": {
+          "light": "./icons/kopi-icon.png",
+          "dark": "./icons/kopi-icon.png"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kopi",
+        "scopeName": "source.kopi",
+        "path": "./syntaxes/kopi.tmLanguage.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PandaBefriender/Kopi"
+  },
+  "license": "MIT"
+}

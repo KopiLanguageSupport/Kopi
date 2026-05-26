@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 ext_dir="$repo_root/.vscode-ext/kopi-language-support"
-out_file="$repo_root/kopi-language-support-1.0.0.vsix"
+out_file="$repo_root/kopi-language-support-1.4.1.vsix"
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
