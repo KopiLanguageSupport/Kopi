@@ -3,7 +3,7 @@
   "displayName": "Kopi Language Support",
   "description": "Syntax highlighting and language support for the Kopi programming language",
   "version": "1.4.1",
-  "publisher": "PandaBefriender",
+  "publisher": "Kopi Team",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -44,7 +44,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PandaBefriender/Kopi"
+    "url": "https://github.com/KopiLanguageSupport/Kopi"
   },
   "license": "MIT"
 }

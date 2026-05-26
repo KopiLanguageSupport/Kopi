@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kopi — Brew Better Code</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="container">
+    <div class="logo">
+      <img src="assets/kopi-icon.png" alt="kopi">
+      <div class="title">kopi</div>
+    </div>
+    <div class="nav-links">
+      <a href="#docs">Docs</a>
+      <a href="#tutorials">Tutorials</a>
+      <a href="#community">Community</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Brew Better Code with <span style="color:var(--accent)">Kopi</span></h1>
+      <p>A modern, expressive, and lightweight programming language designed for developer happiness.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#get-started">Get Started</a>
+        <a class="btn btn-secondary" href="#docs">Documentation</a>
+      </div>
+
+      <div class="code-box">
+        <pre><code>// Define a function to brew coffee
+func brewCoffee(type: String, shots: Number) -> String {
+  if shots > 0 {
+    return "Brewing a hot " + type + " with " + shots + " shots!"
+  }
+  return "Just hot water for now."
+}
+
+print(brewCoffee(type: "Espresso", shots: 2))
+// Output: Brewing a hot Espresso with 2 shots!
+</code></pre>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <div class="feature">
+        <h3 style="color:var(--accent)">Expressive Syntax</h3>
+        <p>Say goodbye to boilerplate. Kopi lets you express complex logic with clean, readable, minimalist syntax.</p>
+      </div>
+      <div class="feature">
+        <h3 style="color:var(--accent)">Lightning Fast</h3>
+        <p>Optimized runtime for fast iteration and production performance.</p>
+      </div>
+      <div class="feature">
+        <h3 style="color:var(--accent)">Batteries Included</h3>
+        <p>Robust standard library and tooling to get you started quickly.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; <span id="year"></span> Kopi Language Team — MIT License
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

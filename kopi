@@ -12,10 +12,10 @@ case "$1" in
             echo "Usage: kopi run <file.kopi>"
             exit 1
         fi
-        python3 "$SCRIPT_DIR/main.kopi" "$@"
+        exec python3 "$SCRIPT_DIR/main.kopi" "$@"
         ;;
     update)
-        python3 "$SCRIPT_DIR/main.kopi" update
+        exec "$SCRIPT_DIR/scripts/update-extension.sh"
         ;;
     "")
         echo "Usage: kopi <command> [args]"
@@ -27,7 +27,7 @@ case "$1" in
     *)
         # If argument doesn't match a command and looks like a file, treat it as 'run'
         if [ -f "$1" ]; then
-            python3 "$SCRIPT_DIR/main.kopi" "$@"
+            exec python3 "$SCRIPT_DIR/main.kopi" "$@"
         else
             echo "Unknown command: $1"
             echo "Usage: kopi <command> [args]"
